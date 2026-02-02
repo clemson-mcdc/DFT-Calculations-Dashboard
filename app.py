@@ -118,7 +118,7 @@ with c2:
         f"""
         <div class="metric-card-wrapper">
             <div class="custom-metric">
-                <div class="metric-label">✅  Elastic Tensor & DOS Available</div>
+                <div class="metric-label">✅  Elastic Tensor & DOS </div>
                 <div class="metric-value">{int(elastic_completed.sum())}</div>
             </div>
             <div class="metric-button-container">
@@ -133,7 +133,7 @@ with c3:
         f"""
         <div class="metric-card-wrapper">
             <div class="custom-metric">
-                <div class="metric-label">⚠️ Only DOS Available</div>
+                <div class="metric-label">⚠️ Only DOS</div>
                 <div class="metric-value">{int((~elastic_completed).sum())}</div>
             </div>
             <div class="metric-button-container">
