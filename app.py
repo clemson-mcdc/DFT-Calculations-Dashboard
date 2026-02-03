@@ -1,3 +1,4 @@
+import base64
 import streamlit as st
 import pandas as pd
 import os
@@ -5,13 +6,14 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit.components.v1 as components
-import time
+import zipfile
+from io import BytesIO
 
 # =====================================================
 # PAGE CONFIG
 # =====================================================
 st.set_page_config(
-    page_title="First Principles Dashboard for High Entropy Alloys ⚛️ ",
+    page_title="DFT CALCULATIONS DASHBOARD",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -28,7 +30,7 @@ load_css()
 # =====================================================
 # TITLE
 # =====================================================
-st.title("🧪 DFT Calculations Dashboard")
+st.title("⚛️ DFT Calculation Dashboard for High Entropy Alloys ")
 st.markdown(
     '<div class="subtitle">A Structured Computational Repository of Alloy Properties</div>',
     unsafe_allow_html=True
@@ -156,7 +158,7 @@ with col1:
     st.markdown(
         """
         <div class="chart-card">
-            <h3>🧬 Element occurrence</h3>
+            <h3>🧬   Element occurrence</h3>
         </div>
         """,
         unsafe_allow_html=True
@@ -323,7 +325,7 @@ with col3:
     st.markdown(
         """
         <div class="chart-card">
-            <h3>⚖️ Modulus vs Ductility</h3>
+            <h3>📉 Modulus vs Ductility</h3>
         </div>
         """,
         unsafe_allow_html=True
@@ -727,102 +729,6 @@ with col4:
 
 
 
-# # ... (your periodic table data and grid creation code remains the same) ...
-# # --------- FULL PERIODIC TABLE DATA ---------
-# full_periodic_table = [
-#     (1, "H", 1.008, 1, 1), (2, "He", 4.0026, 18, 1),
-#     (3, "Li", 6.94, 1, 2), (4, "Be", 9.0122, 2, 2), (5, "B", 10.81, 13, 2),
-#     (6, "C", 12.011, 14, 2), (7, "N", 14.007, 15, 2), (8, "O", 15.999, 16, 2),
-#     (9, "F", 18.998, 17, 2), (10, "Ne", 20.18, 18, 2),
-#     (11, "Na", 22.99, 1, 3), (12, "Mg", 24.305, 2, 3), (13, "Al", 26.982, 13, 3),
-#     (14, "Si", 28.085, 14, 3), (15, "P", 30.974, 15, 3), (16, "S", 32.06, 16, 3),
-#     (17, "Cl", 35.45, 17, 3), (18, "Ar", 39.948, 18, 3),
-#     (19, "K", 39.098, 1, 4), (20, "Ca", 40.078, 2, 4),
-#     (21, "Sc", 44.956, 3, 4), (22, "Ti", 47.867, 4, 4), (23, "V", 50.942, 5, 4),
-#     (24, "Cr", 51.996, 6, 4), (25, "Mn", 54.938, 7, 4), (26, "Fe", 55.845, 8, 4),
-#     (27, "Co", 58.933, 9, 4), (28, "Ni", 58.693, 10, 4), (29, "Cu", 63.546, 11, 4),
-#     (30, "Zn", 65.38, 12, 4),
-#     (31, "Ga", 69.723, 13, 4), (32, "Ge", 72.63, 14, 4), (33, "As", 74.922, 15, 4),
-#     (34, "Se", 78.971, 16, 4), (35, "Br", 79.904, 17, 4), (36, "Kr", 83.798, 18, 4),
-#     (37, "Rb", 85.468, 1, 5), (38, "Sr", 87.62, 2, 5), (39, "Y", 88.906, 3, 5),
-#     (40, "Zr", 91.224, 4, 5), (41, "Nb", 92.906, 5, 5), (42, "Mo", 95.95, 6, 5),
-#     (43, "Tc", 98, 7, 5), (44, "Ru", 101.07, 8, 5), (45, "Rh", 102.91, 9, 5),
-#     (46, "Pd", 106.42, 10, 5), (47, "Ag", 107.868, 11, 5), (48, "Cd", 112.414, 12, 5),
-#     (49, "In", 114.818, 13, 5), (50, "Sn", 118.71, 14, 5), (51, "Sb", 121.76, 15, 5),
-#     (52, "Te", 127.6, 16, 5), (53, "I", 126.904, 17, 5), (54, "Xe", 131.293, 18, 5),
-#     (55, "Cs", 132.905, 1, 6), (56, "Ba", 137.327, 2, 6), (57, "La", 138.905, 3, 6),
-#     (58, "Ce", 140.116, 4, 8), (59, "Pr", 140.908, 5, 8), (60, "Nd", 144.242, 6, 8),
-#     (61, "Pm", 145, 7, 8), (62, "Sm", 150.36, 8, 8), (63, "Eu", 151.964, 9, 8),
-#     (64, "Gd", 157.25, 10, 8), (65, "Tb", 158.925, 11, 8), (66, "Dy", 162.5, 12, 8),
-#     (67, "Ho", 164.93, 13, 8), (68, "Er", 167.259, 14, 8), (69, "Tm", 168.934, 15, 8),
-#     (70, "Yb", 173.045, 16, 8), (71, "Lu", 174.967, 17, 8),
-#     (72, "Hf", 178.49, 4, 6), (73, "Ta", 180.95, 5, 6), (74, "W", 183.84, 6, 6),
-#     (75, "Re", 186.207, 7, 6), (76, "Os", 190.23, 8, 6), (77, "Ir", 192.217, 9, 6),
-#     (78, "Pt", 195.084, 10, 6), (79, "Au", 196.967, 11, 6), (80, "Hg", 200.592, 12, 6),
-#     (81, "Tl", 204.38, 13, 6), (82, "Pb", 207.2, 14, 6), (83, "Bi", 208.98, 15, 6),
-#     (84, "Po", 209, 16, 6), (85, "At", 210, 17, 6), (86, "Rn", 222, 18, 6),
-#     (87, "Fr", 223, 1, 7), (88, "Ra", 226, 2, 7), (89, "Ac", 227, 3, 7),
-#     (90, "Th", 232.038, 4, 9), (91, "Pa", 231.036, 5, 9), (92, "U", 238.029, 6, 9),
-#     (93, "Np", 237, 7, 9), (94, "Pu", 244, 8, 9), (95, "Am", 243, 9, 9),
-#     (96, "Cm", 247, 10, 9), (97, "Bk", 247, 11, 9), (98, "Cf", 251, 12, 9),
-#     (99, "Es", 252, 13, 9), (100, "Fm", 257, 14, 9), (101, "Md", 258, 15, 9),
-#     (102, "No", 259, 16, 9), (103, "Lr", 262, 17, 9),
-#     (104, "Rf", 267, 4, 7), (105, "Db", 268, 5, 7), (106, "Sg", 271, 6, 7),
-#     (107, "Bh", 272, 7, 7), (108, "Hs", 277, 8, 7), (109, "Mt", 276, 9, 7),
-#     (110, "Ds", 281, 10, 7), (111, "Rg", 282, 11, 7), (112, "Cn", 285, 12, 7),
-#     (113, "Nh", 286, 13, 7), (114, "Fl", 289, 14, 7), (115, "Mc", 289, 15, 7),
-#     (116, "Lv", 293, 16, 7), (117, "Ts", 294, 17, 7), (118, "Og", 294, 18, 7)
-# ]
-
-# periodic_df = pd.DataFrame(
-#     full_periodic_table,
-#     columns=["AtomicNumber", "Symbol", "AtomicMass", "Group", "Period"]
-# )
-
-# # ---------------- SESSION STATE ----------------
-# if "selected_elements" not in st.session_state:
-#     st.session_state.selected_elements = []
-
-# # Create period grid
-# period_grid = {}
-# for period in range(1, 10):
-#     for group in range(1, 19):
-#         period_grid[(period, group)] = None
-
-# for _, element in periodic_df.iterrows():
-#     period = element["Period"]
-#     group = element["Group"]
-
-#     if pd.isna(group):
-#         continue
-
-#     group = int(group)
-#     if 1 <= group <= 18 and 1 <= period <= 9:
-#         period_grid[(period, group)] = element
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -838,7 +744,7 @@ if "periodic_last_click" not in st.session_state:
     st.session_state.periodic_last_click = None
 
 st.markdown("<hr style='border:1px solid #444;'>", unsafe_allow_html=True)
-st.markdown("<h2 style='color:white;'>🧪 Select Elements to Filter Alloys</h2>", unsafe_allow_html=True)
+st.markdown("<h2 style='color:white;'>🏗️ Filter Alloy based upon ELement Selection</h2>", unsafe_allow_html=True)
 
 
 
@@ -1086,21 +992,133 @@ else:
     filtered_df = pd.DataFrame(columns=df.columns)
 
 
-# ============================================================
-# FILTERED ALLOYS HEADER
-# ============================================================
-st.markdown(
-    f"""
-    <div class="filtered-alloys-container">
-        <div class="filtered-alloys-title">
-            Filtered Alloys:\u00A0\u00A0
-            <span class="filtered-alloys-count">{len(filtered_df)} found</span>
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
 
+import os
+
+
+# ============================================================
+# Base folder where your data folders are stored
+# ============================================================
+data_root = os.path.join(os.getcwd(), "data")
+
+
+
+# Check subfolders
+expected_folders = ["CONTCAR", "PDOS_USER.dat", "TDOS.dat"]
+for folder in expected_folders:
+    folder_path = os.path.join(data_root, folder)
+    if not os.path.exists(folder_path):
+        st.warning(f"⚠️ DEBUG: Folder missing → {folder_path}")
+
+# ============================================================
+# Function to create ZIP of filtered alloys
+# ============================================================
+def create_filtered_alloys_zip(filtered_df):
+    buffer = BytesIO()
+
+    if filtered_df.empty:
+        st.warning("⚠️ DEBUG: filtered_df is EMPTY — nothing to zip")
+        return buffer
+
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zipf:
+
+        for idx, row in filtered_df.iterrows():
+
+            try:
+                # WARNING: This assumes the last column of filtered_df is unique_id
+                unique_id = row.iloc[132]
+
+                # Optional: replace with explicit column name once known
+                # unique_id = row['YourUniqueIDColumnName']
+
+                alloy_name = str(row.iloc[2]).replace(" ", "_")
+                atom_count = str(row.iloc[3])
+            except Exception as e:
+                continue
+
+            if not unique_id or str(unique_id) == "nan":
+                continue
+
+            file_map = {
+                "CONTCAR": f"CONTCAR_{unique_id}",
+                "PDOS_USER.dat": f"PDOS_USER_{unique_id}.dat",
+                "TDOS.dat": f"TDOS_{unique_id}.dat",
+            }
+
+            for folder, filename in file_map.items():
+                src_path = os.path.join(data_root, folder, filename)
+
+                if not os.path.exists(src_path):
+                    continue
+
+                new_name = f"{folder.split('.')[0]}_{alloy_name}_{atom_count}"
+                if filename.endswith(".dat"):
+                    new_name += ".dat"
+
+                try:
+                    zipf.write(src_path, arcname=new_name)
+                except Exception as e:
+                    pass
+
+    buffer.seek(0)
+    return buffer
+
+# ============================================================
+# Download button
+# ============================================================
+fa_left, fa_right = st.columns([8, 2])
+
+with fa_left:
+    st.markdown(
+        f"""
+        <div class="filtered-alloys-container">
+            <div class="filtered-alloys-title">
+                Filtered Alloys:&nbsp;&nbsp;
+                <span class="filtered-alloys-count">{len(filtered_df)} found</span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+with fa_right:
+    if not filtered_df.empty:
+        zip_buffer = create_filtered_alloys_zip(filtered_df)
+        st.download_button(
+            label="⬇  Download CONTCAR & DOS",
+            data=zip_buffer,
+            file_name="Filtered_Alloy_Data.zip",
+            mime="application/zip",
+        )
+
+
+
+
+# # ============================================================
+# # FILTERED ALLOYS HEADER
+# # ============================================================
+# fa_left, fa_right = st.columns([8, 2])
+
+# with fa_left:
+#     st.markdown(
+#         f"""
+#         <div class="filtered-alloys-container">
+#             <div class="filtered-alloys-title">
+#                 Filtered Alloys:&nbsp;&nbsp;
+#                 <span class="filtered-alloys-count">{len(filtered_df)} found</span>
+#             </div>
+#         </div>
+#         """,
+#         unsafe_allow_html=True
+#     )
+
+# with fa_right:
+#     st.download_button(
+#         label="⬇️ Download",
+#         data="",          # placeholder for now
+#         file_name="filtered_alloys.zip",
+#         key="download_filtered_alloys"
+#     )
 
 
 # ============================================================
@@ -1138,8 +1156,13 @@ else:
     cols_idx = [2, 3, 4, 5, 6, 12, 122, 123, 129, 130, 131]
     display_df = filtered_df.iloc[:, cols_idx].copy()
 
-
-       # --------------------------------------------------
+    # --------------------------------------------------
+    # Store the unique IDs from original filtered_df for each row
+    # --------------------------------------------------
+    # Get unique IDs from column 132 of filtered_df (matching the row indices)
+    unique_ids = filtered_df.iloc[:, 132].reset_index(drop=True)
+    
+    # --------------------------------------------------
     # RESET INDEX (CRITICAL to kill ghost column)
     # --------------------------------------------------
     display_df = display_df.reset_index(drop=True)
@@ -1148,8 +1171,11 @@ else:
     # Insert S. No. column
     # --------------------------------------------------
     display_df.insert(0, "S. No.", range(1, len(display_df) + 1))
-
- 
+    
+    # --------------------------------------------------
+    # Add a placeholder column for download buttons
+    # --------------------------------------------------
+    display_df["Download Files"] = ["⬇ Download"] * len(display_df)
 
     # --------------------------------------------------
     # HARD-CODE COLUMN TITLES (edit freely later)
@@ -1167,12 +1193,12 @@ else:
         "Elastic Modulus (GPa)",
         "Poisson Ratio",
         "Pugh ratio (G/B)",
+        "CONTCAR and DOS FILES ⬇"
     ]
 
-
-# --------------------------------------------------
-# FORMAT NUMERIC COLUMNS (max 3 decimals, no trailing zeros)
-# --------------------------------------------------
+    # --------------------------------------------------
+    # FORMAT NUMERIC COLUMNS (max 3 decimals, no trailing zeros)
+    # --------------------------------------------------
     def format_number(x):
         if isinstance(x, (int, float)):
             # format to 3 decimals, then strip trailing zeros and dot
@@ -1182,116 +1208,229 @@ else:
     numeric_cols = display_df.select_dtypes(include=["number"]).columns
     display_df[numeric_cols] = display_df[numeric_cols].applymap(format_number)
 
-
-
-
-
-
     # --------------------------------------------------
     # COLUMN WIDTHS (1-to-1 with columns above)
+    # Adjusted to accommodate new download column
     # --------------------------------------------------
     column_widths = [
-        "90px",    # S. No.
-        "140px",   # Alloy
-        "120px",   # Atom Count
-        "110px",   # Structure (Ovito)
-        "320px",   # POTCAR_used (wide)
-        "130px",   # Crystal System
-        "120px",   # Nef_DOS
-        "150px",   # Bulk
-        "150px",   # Shear
-        "150px",   # Elastic
-        "140px",   # Poisson
-        "140px",   # Pugh ratio
+        "50px",    # S. No.
+        "110px",   # Alloy
+        "50px",   # Atom Count
+        "70px",   # Structure (Ovito)
+        "220px",   # POTCAR_used (wide)
+        "70px",   # Crystal System
+        "70px",   # Nef_DOS
+        "70px",   # Bulk
+        "70px",   # Shear
+        "70px",   # Elastic
+        "70px",   # Poisson
+        "70px",   # Pugh ratio
+        "190px",   # New: Download Files column
     ]
 
     # --------------------------------------------------
-    # Pandas Styler
+    # Create download buttons for each row
     # --------------------------------------------------
-    styled_df = (
-        display_df.style
-        .hide(axis="index")  # <-- KILLS GHOST COLUMN
-        .set_table_styles(
-            [
-                {
-                    "selector": "table",
-                    "props": [
-                        ("width", "100%"),
-                        ("table-layout", "fixed"),
-                        ("border-collapse", "collapse"),
-                    ],
-                },
-                {
-                    "selector": "th",
-                    "props": [
-                        ("background", "linear-gradient(145deg, #232735, #4c3a3a)"),
-                        ("color", "white"),
-                        ("font-size", "15px"),
-                        ("font-weight", "700"),
-                        ("text-align", "center"),
-                        ("padding", "10px"),
-                        ("border-bottom", "1px solid #4273CE"),
-                        ("white-space", "normal"),
-                        ("word-break", "break-word"),
-                        ("position", "sticky"),
-                        ("top", "0"),
-                        ("z-index", "2"),
-                    ],
-                },
-                {
-                    "selector": "td",
-                    "props": [
-                        ("background-color", "#1f2430"),
-                        ("color", "#e5e7eb"),
-                        ("font-size", "14px"),
-                        ("text-align", "center"),
-                        ("font-family", "Inter, Arial, sans-serif"), 
-                        ("padding", "8px"),
-                        ("border-bottom", "1px solid rgba(255,255,255,0.08)"),
-                        ("white-space", "normal"),
-                        ("word-break", "break-word"),
-                    ],
-                },
-                {
-                    "selector": "tr:nth-child(even) td",
-                    "props": [("background-color", "#252a38")],
-                },
-                {
-                    "selector": "tr:hover td",
-                    "props": [("background-color", "rgba(66,115,206,0.25)")],
-                },
-            ]
-            +
-            # -------- APPLY COLUMN WIDTHS --------
-            [
-                {
-                    "selector": f"th:nth-child({i+1}), td:nth-child({i+1})",
-                    "props": [("width", w)],
-                }
-                for i, w in enumerate(column_widths)
-            ]
-        )     
-    )
+    def create_single_alloy_zip(row_index):
+        """Create a ZIP file for a single alloy row"""
+        buffer = BytesIO()
+        
+        if row_index >= len(unique_ids):
+            return buffer
+        
+        unique_id = unique_ids.iloc[row_index]
+        
+        # Get alloy info from display_df (skip "S. No." and "Download Files" columns)
+        alloy_name = str(display_df.iloc[row_index, 1]).replace(" ", "_")  # Column 1 is "Alloy"
+        atom_count = str(display_df.iloc[row_index, 2])  # Column 2 is "Atom Count"
+        
+        if not unique_id or str(unique_id) == "nan":
+            return buffer
+        
+        with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zipf:
+            file_map = {
+                "CONTCAR": f"CONTCAR_{unique_id}",
+                "PDOS_USER.dat": f"PDOS_USER_{unique_id}.dat",
+                "TDOS.dat": f"TDOS_{unique_id}.dat",
+            }
+            
+            for folder, filename in file_map.items():
+                src_path = os.path.join(data_root, folder, filename)
+                
+                if not os.path.exists(src_path):
+                    continue
+                
+                new_name = f"{folder.split('.')[0]}_{alloy_name}_{atom_count}"
+                if filename.endswith(".dat"):
+                    new_name += ".dat"
+                
+                try:
+                    zipf.write(src_path, arcname=new_name)
+                except Exception as e:
+                    pass
+        
+        buffer.seek(0)
+        return buffer
+
+    # --------------------------------------------------
+    # Convert DataFrame to HTML with download buttons
+    # --------------------------------------------------
+    html_rows = []
     
-
+    # Start with header
+    html_header = "<thead><tr>"
+    for col in display_df.columns:
+        html_header += f'<th>{col}</th>'
+    html_header += "</tr></thead>"
+    
+    # Create table body with download buttons
+    html_body = "<tbody>"
+    for i in range(len(display_df)):
+        html_body += "<tr>"
+        
+        # Add regular columns
+        for j, col in enumerate(display_df.columns[:-1]):  # All columns except the last one
+            cell_value = display_df.iloc[i, j]
+            html_body += f'<td>{cell_value}</td>'
+        
+        # Add download button in the last column
+        zip_buffer = create_single_alloy_zip(i)
+        zip_data = zip_buffer.getvalue()
+        
+        if len(zip_data) > 0:
+            # Create a download button for this specific row
+            b64_zip = base64.b64encode(zip_data).decode()
+            download_filename = f"Alloy_{display_df.iloc[i, 1].replace(' ', '_')}_{display_df.iloc[i, 2]}.zip"
+            
+            html_button = f'''
+            <td style="text-align: center; padding: 5px;">
+                <a href="data:application/zip;base64,{b64_zip}" 
+                   download="{download_filename}"
+                   style="
+                        display: inline-block;
+                        padding: 6px 12px;
+                        background: linear-gradient(145deg, #4273CE, #2a4a8a);
+                        color: white;
+                        text-decoration: none;
+                        border-radius: 4px;
+                        font-size: 13px;
+                        font-weight: 500;
+                        border: none;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                   "
+                   onmouseover="this.style.background='linear-gradient(145deg, #2a4a8a, #4273CE)';"
+                   onmouseout="this.style.background='linear-gradient(145deg, #4273CE, #2a4a8a)';">
+                    ⬇ Download
+                </a>
+            </td>
+            '''
+        else:
+            html_button = '<td style="text-align: center; color: #999;">No Files</td>'
+        
+        html_body += html_button + "</tr>"
+    html_body += "</tbody>"
+    
+    html_table = f'''
+    <table style="
+        width: 100%;
+        table-layout: fixed;
+        border-collapse: collapse;
+        font-family: Inter, Arial, sans-serif;
+    ">
+        {html_header}
+        {html_body}
+    </table>
+    '''
+    
     # --------------------------------------------------
-    # Scroll container (vertical only)
+    # Apply column widths via CSS
     # --------------------------------------------------
-
-
-    components.html(
-        f"""
-        <div style="
-            max-height: 500px;
-            overflow-y: auto;
-            overflow-x: hidden;
-            width: 100%;
-            border-radius: 40px;
-            margin-top: 20px;
-        ">
-            {styled_df.to_html()}
-        </div>
-        """,
-        height=520,
-        scrolling=False,
-    )
+    column_styles = ""
+    for i, width in enumerate(column_widths):
+        column_styles += f'''
+        table th:nth-child({i+1}), 
+        table td:nth-child({i+1}) {{
+            width: {width};
+            min-width: {width};
+            max-width: {width};
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }}
+        '''
+    
+    # --------------------------------------------------
+    # Apply table styling
+    # --------------------------------------------------
+    full_html = f'''
+    <style>
+        {column_styles}
+        
+        table th {{
+            background: linear-gradient(145deg, #232735, #4c3a3a);
+            color: white;
+            font-size: 15px;
+            font-weight: 700;
+            text-align: center;
+            padding: 10px;
+            border-bottom: 1px solid #4273CE;
+            white-space: normal;
+            word-break: break-word;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }}
+        
+        table td {{
+            background-color: #1f2430;
+            color: #e5e7eb;
+            font-size: 14px;
+            text-align: center;
+            padding: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            white-space: normal;
+            word-break: break-word;
+        }}
+        
+        tr:nth-child(even) td {{
+            background-color: #252a38;
+        }}
+        
+        tr:hover td {{
+            background-color: rgba(66,115,206,0.25);
+        }}
+        
+        .download-button {{
+            background: linear-gradient(145deg, #4273CE, #2a4a8a);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            display: inline-block;
+            transition: all 0.2s ease;
+        }}
+        
+        .download-button:hover {{
+            background: linear-gradient(145deg, #2a4a8a, #4273CE);
+        }}
+    </style>
+    
+    <div style="
+        max-height: 500px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        width: 100%;
+        border-radius: 10px;
+        margin-top: 20px;
+    ">
+        {html_table}
+    </div>
+    '''
+    
+    # --------------------------------------------------
+    # Display the table with download buttons
+    # --------------------------------------------------
+    import streamlit.components.v1 as components
+    components.html(full_html, height=520, scrolling=False)
