@@ -546,106 +546,238 @@ div[data-testid="stForm"]
 
 
 /* =====================================================
-   PERIODIC TABLE – CATEGORY COLORS (FINAL, FINAL FIX)
+   PERIODIC TABLE – FADED ELEMENTS (NOT IN DATABASE)
+   ===================================================== */
+
+/* Faded Alkali metals */
+div[class*="st-key-pt_btn_faded_alkali"] button > div {
+    background-color: #da1d19 !important;
+    opacity: 0.5 !important;
+    filter: grayscale(30%) !important;
+    box-shadow: 
+        0 2px 0 #e86969,       /* Lighter 3D shadow */
+        0 3px 7px rgba(0,0,0,0.25) !important; /* Softer outer shadow */
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Faded Alkaline earth metals */
+div[class*="st-key-pt_btn_faded_alkaline-earth"] button > div {
+    background-color: #d17300 !important;
+    opacity: 0.5 !important;
+    filter: grayscale(30%) !important;
+    box-shadow: 
+        0 2px 0 #ddcea3,       /* Lighter 3D shadow */
+        0 3px 7px rgba(0,0,0,0.25) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Faded Transition metals */
+div[class*="st-key-pt_btn_faded_transition"] button > div {
+    background-color: #8e24aa !important;
+    opacity: 0.5 !important;
+    filter: grayscale(30%) !important;
+    box-shadow: 
+        0 2px 0 #be7dd4,       /* Lighter 3D shadow */
+        0 3px 7px rgba(0,0,0,0.25) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Faded Post-transition metals */
+div[class*="st-key-pt_btn_faded_post-transition"] button > div {
+    background-color: #3949ab !important;
+    opacity: 0.5 !important;
+    filter: grayscale(30%) !important;
+    box-shadow: 
+        0 2px 0 #797edf,       /* Lighter 3D shadow */
+        0 3px 7px rgba(0,0,0,0.25) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Faded Metalloids */
+div[class*="st-key-pt_btn_faded_metalloid"] button > div {
+    background-color: #00897b !important;
+    opacity: 0.5 !important;
+    filter: grayscale(30%) !important;
+    box-shadow: 
+        0 2px 0 #75c7bf,       /* Lighter 3D shadow */
+        0 3px 7px rgba(0,0,0,0.25) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Faded Reactive nonmetals */
+div[class*="st-key-pt_btn_faded_nonmetal"] button > div {
+    background-color: #43a047 !important;
+    opacity: 0.5 !important;
+    filter: grayscale(30%) !important;
+    box-shadow: 
+        0 2px 0 #95e67c,       /* Lighter 3D shadow */
+        0 3px 7px rgba(0,0,0,0.25) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Faded Noble gases */
+div[class*="st-key-pt_btn_faded_noble"] button > div {
+    background-color: #1e88e5 !important;
+    opacity: 0.5 !important;
+    filter: grayscale(30%) !important;
+    box-shadow: 
+        0 2px 0 #7fc8ea,       /* Lighter 3D shadow */
+        0 3px 7px rgba(0,0,0,0.25) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Faded Lanthanides */
+div[class*="st-key-pt_btn_faded_lanthanide"] button > div {
+    background-color: #6d4c41 !important;
+    opacity: 0.5 !important;
+    filter: grayscale(30%) !important;
+    box-shadow: 
+        0 2px 0 #f6ac87,       /* Lighter 3D shadow */
+        0 3px 7px rgba(0,0,0,0.25) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Faded Actinides */
+div[class*="st-key-pt_btn_faded_actinide"] button > div {
+    background-color: #5e35b1 !important;
+    opacity: 0.5 !important;
+    filter: grayscale(30%) !important;
+    box-shadow: 
+        0 2px 0 #b192ed,       /* Lighter 3D shadow */
+        0 3px 7px rgba(0,0,0,0.25) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Faded Unknown */
+div[class*="st-key-pt_btn_faded_unknown"] button > div {
+    background-color: #757575 !important;
+    opacity: 0.5 !important;
+    filter: grayscale(30%) !important;
+    box-shadow: 
+        0 2px 0 #fefefe,       /* Lighter 3D shadow */
+        0 3px 7px rgba(0,0,0,0.25) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* =====================================================
+   PERIODIC TABLE – CATEGORY COLORS (REGULAR - IN DATABASE)
    ===================================================== */
 
 /* Alkali metals */
-div[class*="st-key-pt_btn_alkali"] button > div {
+div[class*="st-key-pt_btn_alkali"]:not([class*="faded"]) button > div {
     background-color: #da1d19 !important;
+    opacity: 1 !important;
+    filter: grayscale(0%) !important;
     box-shadow: 
         0 4px 0 #e86969,       /* 3D shadow */
         0 6px 14px rgba(0,0,0,0.35) !important; /* outer shadow */
     color: white !important;
 }
 
-
 /* Alkaline earth metals */
-div[class*="st-key-pt_btn_alkaline-earth"] button > div {
+div[class*="st-key-pt_btn_alkaline-earth"]:not([class*="faded"]) button > div {
     background-color: #d17300 !important;
+    opacity: 1 !important;
+    filter: grayscale(0%) !important;
     box-shadow: 
         0 4px 0 #ddcea3,       /* 3D shadow */
-        0 6px 14px rgba(0,0,0,0.35) !important; /* outer shadow */
+        0 6px 14px rgba(0,0,0,0.35) !important;
     color: white !important;
 }
 
 /* Transition metals */
-div[class*="st-key-pt_btn_transition"] button > div {
+div[class*="st-key-pt_btn_transition"]:not([class*="faded"]) button > div {
     background-color: #8e24aa !important;
+    opacity: 1 !important;
+    filter: grayscale(0%) !important;
     box-shadow: 
         0 4px 0 #be7dd4,       /* 3D shadow */
-        0 6px 14px rgba(0,0,0,0.35) !important; /* outer shadow */
+        0 6px 14px rgba(0,0,0,0.35) !important;
     color: white !important;
 }
 
 /* Post-transition metals */
-div[class*="st-key-pt_btn_post-transition"] button > div {
+div[class*="st-key-pt_btn_post-transition"]:not([class*="faded"]) button > div {
     background-color: #3949ab !important;
+    opacity: 1 !important;
+    filter: grayscale(0%) !important;
     box-shadow: 
         0 4px 0 #797edf,       /* 3D shadow */
-        0 6px 14px rgba(0,0,0,0.35) !important; /* outer shadow */
+        0 6px 14px rgba(0,0,0,0.35) !important;
     color: white !important;
 }
 
 /* Metalloids */
-div[class*="st-key-pt_btn_metalloid"] button > div {
+div[class*="st-key-pt_btn_metalloid"]:not([class*="faded"]) button > div {
     background-color: #00897b !important;
+    opacity: 1 !important;
+    filter: grayscale(0%) !important;
     box-shadow: 
         0 4px 0 #75c7bf,       /* 3D shadow */
-        0 6px 14px rgba(0,0,0,0.35) !important; /* outer shadow */
+        0 6px 14px rgba(0,0,0,0.35) !important;
     color: white !important;
 }
 
 /* Reactive nonmetals */
-div[class*="st-key-pt_btn_nonmetal"] button > div {
+div[class*="st-key-pt_btn_nonmetal"]:not([class*="faded"]) button > div {
     background-color: #43a047 !important;
+    opacity: 1 !important;
+    filter: grayscale(0%) !important;
     box-shadow: 
         0 4px 0 #95e67c,       /* 3D shadow */
-        0 6px 14px rgba(0,0,0,0.35) !important; /* outer shadow */
+        0 6px 14px rgba(0,0,0,0.35) !important;
     color: white !important;
 }
 
 /* Noble gases */
-div[class*="st-key-pt_btn_noble"] button > div{
+div[class*="st-key-pt_btn_noble"]:not([class*="faded"]) button > div {
     background-color: #1e88e5 !important;
+    opacity: 1 !important;
+    filter: grayscale(0%) !important;
     box-shadow: 
         0 4px 0 #7fc8ea,       /* 3D shadow */
-        0 6px 14px rgba(0,0,0,0.35) !important; /* outer shadow */
+        0 6px 14px rgba(0,0,0,0.35) !important;
     color: white !important;
 }
 
 /* Lanthanides */
-div[class*="st-key-pt_btn_lanthanide"] button > div {
+div[class*="st-key-pt_btn_lanthanide"]:not([class*="faded"]) button > div {
     background-color: #6d4c41 !important;
+    opacity: 1 !important;
+    filter: grayscale(0%) !important;
     box-shadow: 
         0 4px 0 #f6ac87,       /* 3D shadow */
-        0 6px 14px rgba(0,0,0,0.35) !important; /* outer shadow */
+        0 6px 14px rgba(0,0,0,0.35) !important;
     color: white !important;
 }
 
 /* Actinides */
-div[class*="st-key-pt_btn_actinide"] button > div {
+div[class*="st-key-pt_btn_actinide"]:not([class*="faded"]) button > div {
     background-color: #5e35b1 !important;
+    opacity: 1 !important;
+    filter: grayscale(0%) !important;
     box-shadow: 
         0 4px 0 #b192ed,       /* 3D shadow */
-        0 6px 14px rgba(0,0,0,0.35) !important; /* outer shadow */
+        0 6px 14px rgba(0,0,0,0.35) !important;
     color: white !important;
 }
 
 /* Unknown */
-div[class*="st-key-pt_btn_unknown"] button > div {
+div[class*="st-key-pt_btn_unknown"]:not([class*="faded"]) button > div {
     background-color: #757575 !important;
+    opacity: 1 !important;
+    filter: grayscale(0%) !important;
     box-shadow: 
         0 4px 0 #fefefe,       /* 3D shadow */
-        0 6px 14px rgba(0,0,0,0.35) !important; /* outer shadow */
+        0 6px 14px rgba(0,0,0,0.35) !important;
     color: white !important;
 }
 
 /* =====================================================
-   PERIODIC TABLE – SLECTED ELEMNTS
+   PERIODIC TABLE – SELECTED ELEMENTS (REGULAR - IN DATABASE)
    ===================================================== */
 
-
-
+/* This section remains the same as before for selected elements */
 
 /* Outer center column with blue background and red border */
 .outer-center {
@@ -660,7 +792,6 @@ div[class*="st-key-pt_btn_unknown"] button > div {
     transition: all 0.25s ease;
     border-radius: 16px;
     height: 100px;
-
 }
 
 .outer-center:hover {
@@ -669,40 +800,33 @@ div[class*="st-key-pt_btn_unknown"] button > div {
     box-shadow: 4px 4px 8px #0f111a, -4px -4px 8px #252933;
 }
 
-
 /* Left inner column */
 .outer-center .inner-left {
-    flex: 1;                   /* same as before */
+    flex: 1;
     font-weight: 700;
-    font-size: 23px;           /* increase font size */
-    color: white;              /* text color */
+    font-size: 23px;
+    color: white;
     display: flex;
-    align-items: center;       /* vertically center text */
+    align-items: center;
     justify-content: flex-start;
-     /* left align text */
-     text-align: center;
+    text-align: center;
 }
 
 .outer-center .inner-right {
-    flex: 3;                    
-    font-size: 22px;            
-    color: white;               
-    display: block;             /* use block, not flex */
-    max-height: 100px;          
-    overflow-y: auto;           
-    word-wrap: break-word;      
-    box-sizing: border-box;     
-
-    /* Optional: vertical centering for single-line content */
-    padding-top: 8px;   
+    flex: 3;
+    font-size: 22px;
+    color: white;
+    display: block;
+    max-height: 100px;
+    overflow-y: auto;
+    word-wrap: break-word;
+    box-sizing: border-box;
+    padding-top: 8px;
     padding-bottom: 8px;
     padding-left: 4px;
     padding-right: 4px;
     text-align: center;
 }
-
-
-
 
 
 

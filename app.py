@@ -852,6 +852,8 @@ full_periodic_table = [
     (113, "Nh", 286, 13, 7), (114, "Fl", 289, 14, 7), (115, "Mc", 289, 15, 7),
     (116, "Lv", 293, 16, 7), (117, "Ts", 294, 17, 7), (118, "Og", 294, 18, 7)
 ]
+# Get list of elements present in your database from the element occurrence calculation
+present_elements = list(total.keys())  # This comes from your element occurrence code
 
 periodic_df = pd.DataFrame(
     full_periodic_table,
@@ -859,7 +861,8 @@ periodic_df = pd.DataFrame(
 )
 
 periodic_df["Category"] = periodic_df["Symbol"].map(ELEMENT_CATEGORIES).fillna("unknown")
-
+# Add a column to track if element is present in database
+periodic_df["InDatabase"] = periodic_df["Symbol"].isin(present_elements)
 
 # Create period grid
 period_grid = {}
@@ -884,19 +887,13 @@ for _, element in periodic_df.iterrows():
 
 left_pad, center_col, right_pad = st.columns([15, 70, 15])
 
-
-
-
 # REAL container that actually wraps columns
 with center_col:
-
     # =====================================================
     # PERIODIC TABLE FORM WITH CSS CLASSES
     # =====================================================
-
     with st.container():
         with st.form(key="periodic_table_form", clear_on_submit=True):
-
             for period in range(1, 10):
                 cols = st.columns(18)
                 for group in range(1, 19):
@@ -904,12 +901,15 @@ with center_col:
                         element = period_grid.get((period, group))
                         if element is not None:
                             sym = element["Symbol"]
-                            category = element["Category"]   
+                            category = element["Category"]
+                            in_database = element["InDatabase"]
                             is_selected = sym in st.session_state.selected_elements
                             btn_key = f"pt_btn_{category}_{period}_{group}"
-
-                        
-
+                            
+                            # Add a class for elements not in database
+                            if not in_database:
+                                btn_key = f"pt_btn_faded_{category}_{period}_{group}"
+                            
                             if st.form_submit_button(
                                 sym,
                                 key=btn_key,
@@ -920,9 +920,7 @@ with center_col:
                         else:
                             st.markdown('<div class="blank-cell"></div>', unsafe_allow_html=True)
 
-
     st.markdown('</div>', unsafe_allow_html=True)
-    
 
 # Handle form submission
 if st.session_state.periodic_last_click:
@@ -1146,6 +1144,7 @@ with fa_right:
 # DATAFRAME OUTPUT (FINAL, NO GHOST COLUMN)
 # ============================================================
 if filtered_df.empty:
+    st.markdown('<div style="margin-top: 40px;"></div>', unsafe_allow_html=True)
     st.info("No alloys available for selected elements.")
 else:
     st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
