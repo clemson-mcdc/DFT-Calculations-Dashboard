@@ -11,7 +11,7 @@ import time
 # PAGE CONFIG
 # =====================================================
 st.set_page_config(
-    page_title="DFT Calculations Dashboard",
+    page_title="First Principles Dashboard for High Entropy Alloys ⚛️ ",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -30,7 +30,7 @@ load_css()
 # =====================================================
 st.title("🧪 DFT Calculations Dashboard")
 st.markdown(
-    '<div class="subtitle">Structured database of Body-Centered Cubic (BCC) alloys</div>',
+    '<div class="subtitle">A Structured Computational Repository of Alloy Properties</div>',
     unsafe_allow_html=True
 )
 
