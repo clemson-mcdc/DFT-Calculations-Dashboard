@@ -1023,8 +1023,8 @@ def create_filtered_alloys_zip(filtered_df):
         for idx, row in filtered_df.iterrows():
 
             try:
-                # WARNING: This assumes the last column of filtered_df is unique_id
-                unique_id = row.iloc[132]
+                # WARNING: This assumes the first column of filtered_df is unique_id
+                unique_id = row.iloc[0]
 
                 # Optional: replace with explicit column name once known
                 # unique_id = row['YourUniqueIDColumnName']
@@ -1061,11 +1061,10 @@ def create_filtered_alloys_zip(filtered_df):
     buffer.seek(0)
     return buffer
 
-# ============================================================
-# Download button
-# ============================================================
-fa_left, fa_right = st.columns([8, 2])
 
+fa_left, fa_analysis, fa_csv, fa_zip = st.columns([6, 2, 2, 2])
+
+# ================= LEFT =================
 with fa_left:
     st.markdown(
         f"""
@@ -1079,17 +1078,46 @@ with fa_left:
         unsafe_allow_html=True
     )
 
-with fa_right:
+st.session_state["filtered_df"] = filtered_df
+
+
+# ================= DETAILED ANALYSIS =================
+with fa_analysis:
     if not filtered_df.empty:
-        zip_buffer = create_filtered_alloys_zip(filtered_df)
+        if st.button(
+            "📊 Detailed Analysis",
+            key="btn_details",
+            use_container_width=True
+        ):
+            st.switch_page("pages/Details.py")
+
+
+# ================= DOWNLOAD CSV =================
+with fa_csv:
+    if not filtered_df.empty:
+        csv_data = filtered_df.to_csv(index=False).encode("utf-8")
         st.download_button(
-            label="⬇  Download CONTCAR & DOS",
-            data=zip_buffer,
-            file_name="Filtered_Alloy_Data.zip",
-            mime="application/zip",
+            label="⬇ Download CSV",
+            data=csv_data,
+            file_name="Filtered_Alloys.csv",
+            mime="text/csv",
+            key="btn_csv",
+            use_container_width=True
         )
 
 
+# ================= DOWNLOAD ZIP =================
+with fa_zip:
+    if not filtered_df.empty:
+        zip_buffer = create_filtered_alloys_zip(filtered_df)
+        st.download_button(
+            label="⬇ Download CONTCAR & DOS",
+            data=zip_buffer,
+            file_name="Filtered_Alloy_Data.zip",
+            mime="application/zip",
+            key="btn_zip",
+            use_container_width=True
+        )
 
 
 # # ============================================================
@@ -1152,14 +1180,14 @@ else:
     # --------------------------------------------------
     # Select required columns (0-based indexing)
     # --------------------------------------------------
-    cols_idx = [2, 3, 4, 5, 6, 12, 122, 123, 129, 130, 131]
+    cols_idx = [3, 4, 5, 6, 10, 13, 124, 125, 129, 131, 133]
     display_df = filtered_df.iloc[:, cols_idx].copy()
 
     # --------------------------------------------------
     # Store the unique IDs from original filtered_df for each row
     # --------------------------------------------------
     # Get unique IDs from column 132 of filtered_df (matching the row indices)
-    unique_ids = filtered_df.iloc[:, 132].reset_index(drop=True)
+    unique_ids = filtered_df["Unique_ID"].reset_index(drop=True)
     
     # --------------------------------------------------
     # RESET INDEX (CRITICAL to kill ghost column)
