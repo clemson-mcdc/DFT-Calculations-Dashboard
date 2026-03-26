@@ -279,6 +279,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
+from streamlit.components.v1 import html as st_html
 from scipy.interpolate import interp1d
 import re
 
@@ -304,6 +305,58 @@ present_cols = [f"{el}_present" for el in elements]
 MARKER_OPTIONS = ["circle","square","diamond","triangle-up","cross","x","star"]
 # Use a palette that contains good contrast — Plotly qualitative palettes combined
 DEFAULT_COLORS = px.colors.qualitative.Plotly + px.colors.qualitative.Dark24 + px.colors.qualitative.Light24
+LINE_STYLE_OPTIONS = {
+    "No line": None,
+    "--- line": "solid",
+    "-.-.- line": "dashdot",
+    "... line": "dot",
+    "-- -- line": "dash",
+    "----  ---- line": "longdash",
+    "---- . ---- line": "longdashdot",
+}
+
+HEATMAP_SCALE_OPTIONS = {
+    "Viridis": px.colors.sequential.Viridis,
+    "Plasma": px.colors.sequential.Plasma,
+    "Inferno": px.colors.sequential.Inferno,
+    "Magma": px.colors.sequential.Magma,
+    "Cividis": px.colors.sequential.Cividis,
+    "Turbo": px.colors.sequential.Turbo,
+    "Jet": px.colors.sequential.Jet,
+    "RdBu": px.colors.diverging.RdBu,
+    "Spectral": px.colors.diverging.Spectral,
+    "Portland": px.colors.diverging.Portland,
+    "Picnic": px.colors.diverging.Picnic,
+    "Plotly3": px.colors.sequential.Plotly3,
+}
+
+def color_with_alpha(color_value, alpha):
+    color_str = str(color_value).strip()
+    if color_str.startswith("#") and len(color_str) == 7:
+        r = int(color_str[1:3], 16)
+        g = int(color_str[3:5], 16)
+        b = int(color_str[5:7], 16)
+        return f"rgba({r}, {g}, {b}, {alpha})"
+    return color_str
+
+DOWNLOAD_BASE_WIDTH = 1200
+DOWNLOAD_BASE_HEIGHT = 900
+DOWNLOAD_ASPECT_RATIO = DOWNLOAD_BASE_WIDTH / DOWNLOAD_BASE_HEIGHT
+
+def sync_download_from_width():
+    width_val = int(st.session_state.get("scatter_download_width", DOWNLOAD_BASE_WIDTH))
+    st.session_state["scatter_download_height"] = max(300, int(round(width_val / DOWNLOAD_ASPECT_RATIO)))
+    st.session_state["scatter_download_scale"] = round(width_val / DOWNLOAD_BASE_WIDTH, 3)
+
+def sync_download_from_height():
+    height_val = int(st.session_state.get("scatter_download_height", DOWNLOAD_BASE_HEIGHT))
+    st.session_state["scatter_download_width"] = max(400, int(round(height_val * DOWNLOAD_ASPECT_RATIO)))
+    st.session_state["scatter_download_scale"] = round(height_val / DOWNLOAD_BASE_HEIGHT, 3)
+
+def sync_download_from_scale():
+    scale_val = float(st.session_state.get("scatter_download_scale", 1.0))
+    st.session_state["scatter_download_width"] = max(400, int(round(DOWNLOAD_BASE_WIDTH * scale_val)))
+    st.session_state["scatter_download_height"] = max(300, int(round(DOWNLOAD_BASE_HEIGHT * scale_val)))
 
 # ---------- complexity / family helpers ----------
 def classify_complexity(row):
@@ -435,13 +488,15 @@ with col_controls:
         selected_complexities = st.multiselect("Filter complexities", complexities, default=complexities, key="scatter_complexities")
 
     # Row 3: Lock Axis Scaling, Plot Alloy Names, Show other Alloys (33% each)
-    r3c1, r3c2, r3c3 = st.columns([1,1,1], gap="small")
+    r3c1, r3c2, r3c3, r3c4 = st.columns([1,1,1,1], gap="small")
     with r3c1:
         lock_axes = st.checkbox("Lock Axis Scaling", value=False, key="lock_axes_limits")
     with r3c2:
         plot_alloy_names = st.checkbox("Plot Alloy Names", value=False, key="plot_alloy_names")
     with r3c3:
         show_other_alloys = st.checkbox("Show other Alloys", value=False, key="show_other_alloys")
+    with r3c4:
+        add_marker_border = st.checkbox("Add marker border", value=False, key="scatter_add_marker_border")
 
     # Filter the df according to the user/compexity selections
     df_filtered_scatter = df_plot.copy()
@@ -516,19 +571,37 @@ with col_controls:
         ymax = st.number_input("Ymax", value=float(st.session_state["axis_limits"]["ymax"]), format="%.4f", key=ymax_key)
         st.session_state["axis_limits"]["ymax"] = float(ymax)
 
-    # Row 4: Background (25%), Marker opacity (25%), Marker size (25%), Alloy name size (25% - shown only if Plot Alloy Names)
-    r4c1, r4c2, r4c3, r4c4 = st.columns([1,1,1,1], gap="small")
-    with r4c1:
-        bg = st.color_picker("Background", "#262e40", key="scatter_bg")
-    with r4c2:
-        marker_opacity = st.slider("Marker opacity", 0.1, 1.0, 0.9, step=0.05, key="scatter_markerop")
-    with r4c3:
-        marker_size = st.slider("Marker size", 4, 24, 9, key="scatter_markersize")
-    with r4c4:
-        if plot_alloy_names:
-            alloy_name_size = st.slider("Alloy Name Size", 6, 36, 12, key="alloy_name_size")
-        else:
-            alloy_name_size = st.session_state.get("alloy_name_size", 12)
+    if add_marker_border:
+        r4c1, r4c2, r4c3, r4c4, r4c5, r4c6 = st.columns([1,1,1,1,1,1], gap="small")
+        with r4c1:
+            bg = st.color_picker("Background", "#262e40", key="scatter_bg")
+        with r4c2:
+            axis_color = st.color_picker("Axis color", "#ffffff", key="scatter_axis_color")
+        with r4c3:
+            marker_border_color = st.color_picker("Marker border color", "#ffffff", key="scatter_marker_border_color")
+        with r4c4:
+            marker_size = st.slider("Marker size", 4, 24, 9, key="scatter_markersize")
+        with r4c5:
+            marker_opacity = st.slider("Marker opacity", 0.1, 1.0, 0.9, step=0.05, key="scatter_markerop")
+        with r4c6:
+            marker_border_width = st.slider("Marker border width", 0.0, 4.0, 0.8, step=0.1, key="scatter_marker_border_width")
+    else:
+        r4c1, r4c2, r4c3, r4c4 = st.columns([1,1,1,1], gap="small")
+        with r4c1:
+            bg = st.color_picker("Background", "#262e40", key="scatter_bg")
+        with r4c2:
+            axis_color = st.color_picker("Axis color", "#ffffff", key="scatter_axis_color")
+        with r4c3:
+            marker_size = st.slider("Marker size", 4, 24, 9, key="scatter_markersize")
+        with r4c4:
+            marker_opacity = st.slider("Marker opacity", 0.1, 1.0, 0.9, step=0.05, key="scatter_markerop")
+        marker_border_color = st.session_state.get("scatter_marker_border_color", "#ffffff")
+        marker_border_width = 0.0
+
+    if plot_alloy_names:
+        alloy_name_size = st.slider("Alloy Name Size", 6, 36, 12, key="alloy_name_size")
+    else:
+        alloy_name_size = st.session_state.get("alloy_name_size", 12)
 
     # Styling mode radio (By User, By Complexity, By Family)
     style_mode = st.radio("Styling mode", ["By User", "By Complexity", "By Family"], index=0, key="scatter_styling_mode")
@@ -555,6 +628,218 @@ xmin = float(st.session_state["axis_limits"]["xmin"])
 xmax = float(st.session_state["axis_limits"]["xmax"])
 ymin = float(st.session_state["axis_limits"]["ymin"])
 ymax = float(st.session_state["axis_limits"]["ymax"])
+
+with st.expander("Extra editing options"):
+    st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+    extra_edit_cols = st.columns([15, 15, 15, 15, 10, 10, 10, 10], gap="small")
+
+    with extra_edit_cols[0]:
+        selected_line_style_label = st.selectbox(
+            "Line Plot",
+            options=list(LINE_STYLE_OPTIONS.keys()),
+            index=0,
+            key="scatter_group_line_style_label",
+        )
+
+    with extra_edit_cols[1]:
+        line_width = st.slider("Line width", 1, 12, 2, key="scatter_group_line_width")
+
+    with extra_edit_cols[2]:
+        line_opacity = st.slider("Line opacity", 0.1, 1.0, 0.9, step=0.05, key="scatter_group_line_opacity")
+
+    with extra_edit_cols[3]:
+        download_button_placeholder = st.empty()
+
+    with extra_edit_cols[4]:
+        download_width = st.number_input(
+            "Width (px)",
+            min_value=400,
+            max_value=5000,
+            value=DOWNLOAD_BASE_WIDTH,
+            step=100,
+            key="scatter_download_width",
+            on_change=sync_download_from_width,
+        )
+
+    with extra_edit_cols[5]:
+        download_height = st.number_input(
+            "Height (px)",
+            min_value=300,
+            max_value=5000,
+            value=DOWNLOAD_BASE_HEIGHT,
+            step=100,
+            key="scatter_download_height",
+            on_change=sync_download_from_height,
+        )
+
+    with extra_edit_cols[6]:
+        download_scale = st.number_input(
+            "Scale",
+            min_value=0.5,
+            max_value=5.0,
+            value=1.0,
+            step=0.1,
+            format="%.1f",
+            key="scatter_download_scale",
+            on_change=sync_download_from_scale,
+        )
+
+    with extra_edit_cols[7]:
+        download_format = st.selectbox(
+            "Download format",
+            options=["png", "svg", "jpeg", "webp"],
+            index=0,
+            key="scatter_download_format",
+        )
+
+    with download_button_placeholder:
+        st_html(
+            f"""
+            <style>
+            #scatter-download-button {{
+              width: 100%;
+              min-height: 38px;
+              background: linear-gradient(145deg, #232735, #4c3a3a);
+              color: #ffffff;
+              border-radius: 10px;
+              border: 1px solid #4c4d52;
+              padding: 8px 18px;
+              font-weight: 600;
+              font-size: 0.95rem;
+              cursor: pointer;
+              transition: all 0.3s ease;
+            }}
+            #scatter-download-button:hover {{
+              transform: translateY(-2px);
+              box-shadow: 4px 4px 8px #0f111a, -4px -4px 8px #252933;
+            }}
+            #scatter-download-button:active {{
+              transform: scale(0.97);
+              box-shadow: inset 2px 2px 5px #0f111a, inset -2px -2px 5px #252933;
+            }}
+            </style>
+            <div style="padding-top: 28px;">
+              <button id="scatter-download-button">
+                Download plot
+              </button>
+            </div>
+            <script>
+            const button = document.getElementById("scatter-download-button");
+            if (button) {{
+              button.onclick = function () {{
+                const parentDoc = window.parent.document;
+                const plots = parentDoc.querySelectorAll('div[data-testid="stPlotlyChart"] .js-plotly-plot');
+                const scatterPlot = plots && plots.length ? plots[0] : null;
+                if (!scatterPlot) {{
+                  window.alert("Scatter plot not found for download.");
+                  return;
+                }}
+
+                const parentPlotly = window.parent.Plotly;
+                if (parentPlotly && typeof parentPlotly.downloadImage === "function") {{
+                  parentPlotly.downloadImage(scatterPlot, {{
+                    format: "{download_format}",
+                    filename: "interactive_scatter",
+                    width: {int(download_width)},
+                    height: {int(download_height)},
+                    scale: {float(download_scale)},
+                  }});
+                  return;
+                }}
+
+                const modebarButtons = parentDoc.querySelectorAll('div[data-testid="stPlotlyChart"] .modebar-btn');
+                for (const item of modebarButtons) {{
+                  const label = (item.getAttribute("data-title") || item.getAttribute("aria-label") || item.getAttribute("title") || "").toLowerCase();
+                  if (label.includes("download plot")) {{
+                    item.click();
+                    return;
+                  }}
+                }}
+
+                window.alert("Plot download is not available in this browser view.");
+              }};
+            }}
+            </script>
+            """,
+            height=76,
+        )
+
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+    heatmap_cols = st.columns([14, 12, 8, 8, 8, 10, 10, 10, 10, 10], gap="small")
+
+    heatmap_axis_options = ["None"] + all_plot_columns
+    with heatmap_cols[0]:
+        heatmap_z_col = st.selectbox(
+            "Heat map axis",
+            options=heatmap_axis_options,
+            index=0,
+            key="scatter_heatmap_axis",
+        )
+    with heatmap_cols[1]:
+        heatmap_scale_label = st.selectbox(
+            "Heat map scale",
+            options=list(HEATMAP_SCALE_OPTIONS.keys()),
+            index=0,
+            key="scatter_heatmap_scale",
+        )
+    with heatmap_cols[2]:
+        reverse_heatmap_scale = st.checkbox("Reverse", value=False, key="scatter_heatmap_reverse")
+    with heatmap_cols[3]:
+        show_heatmap_bar = st.checkbox("Color bar", value=True, key="scatter_heatmap_show_bar")
+    with heatmap_cols[4]:
+        heatmap_autorange = st.checkbox("Auto range", value=True, key="scatter_heatmap_autorange")
+    with heatmap_cols[5]:
+        heatmap_zmin = st.number_input("Z min", value=0.0, format="%.4f", key="scatter_heatmap_zmin")
+    with heatmap_cols[6]:
+        heatmap_zmax = st.number_input("Z max", value=1.0, format="%.4f", key="scatter_heatmap_zmax")
+    with heatmap_cols[7]:
+        heatmap_bar_width = st.slider("Bar width", 8, 40, 16, key="scatter_heatmap_bar_width")
+    with heatmap_cols[8]:
+        heatmap_bar_length = st.slider("Bar height", 0.2, 1.0, 0.75, step=0.05, key="scatter_heatmap_bar_length")
+    with heatmap_cols[9]:
+        heatmap_bar_position = st.selectbox(
+            "Bar position",
+            options=["Right", "Left", "Above", "Below"],
+            index=0,
+            key="scatter_heatmap_bar_position",
+        )
+
+    heatmap_enabled_local = heatmap_z_col != "None"
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+    title_cols = st.columns([18, 18, 10, 18], gap="small")
+    with title_cols[0]:
+        x_axis_title_override = st.text_input(
+            "X axis title",
+            value="",
+            key="scatter_x_axis_title_override",
+            placeholder="Leave blank to use selected X axis",
+        )
+    with title_cols[1]:
+        y_axis_title_override = st.text_input(
+            "Y axis title",
+            value="",
+            key="scatter_y_axis_title_override",
+            placeholder="Leave blank to use selected Y axis",
+        )
+    with title_cols[2]:
+        show_legend = st.checkbox("Show legend", value=True, key="scatter_show_legend")
+    with title_cols[3]:
+        if heatmap_enabled_local:
+            heatmap_heading_override = st.text_input(
+                "Heat map heading",
+                value="",
+                key="scatter_heatmap_heading_override",
+                placeholder="Leave blank to use heat map axis name",
+            )
+        else:
+            heatmap_heading_override = ""
+
+selected_group_line_style = LINE_STYLE_OPTIONS[selected_line_style_label]
+selected_heatmap_scale = HEATMAP_SCALE_OPTIONS[heatmap_scale_label]
+heatmap_enabled = heatmap_z_col != "None"
+x_axis_title_final = x_axis_title_override.strip() or x_col
+y_axis_title_final = y_axis_title_override.strip() or y_col
+heatmap_heading_final = heatmap_heading_override.strip() or heatmap_z_col
 
 
 # ---------------------------
@@ -781,6 +1066,24 @@ with scatter_placeholder:
     for c in hover_df.columns:
         plotting_df[c] = hover_df[c]
 
+    heatmap_zmin_final = None
+    heatmap_zmax_final = None
+    if heatmap_enabled:
+        plotting_df[heatmap_z_col] = pd.to_numeric(plotting_df[heatmap_z_col], errors="coerce")
+        plotting_df = plotting_df.dropna(subset=[heatmap_z_col])
+        if plotting_df.empty:
+            st.warning("No rows remain after applying the selected heat map axis.")
+        else:
+            z_series = plotting_df[heatmap_z_col]
+            zmin_auto = float(z_series.min())
+            zmax_auto = float(z_series.max())
+            if heatmap_autorange:
+                heatmap_zmin_final = zmin_auto
+                heatmap_zmax_final = zmax_auto
+            else:
+                heatmap_zmin_final = float(heatmap_zmin)
+                heatmap_zmax_final = float(heatmap_zmax)
+
     # Ensure alloy_name_size in session (safe fallback)
     alloy_name_size = st.session_state.get("alloy_name_size", 12)
 
@@ -808,10 +1111,12 @@ with scatter_placeholder:
     symbol_arg = None
     color_map = {}
     symbol_map = {}
+    group_order_col = None
 
     if style_mode == "By User":
         color_arg = "User"
         symbol_arg = "User"
+        group_order_col = "User"
         users_present = sorted(plotting_df["User"].dropna().unique())
         for i, u in enumerate(users_present):
             color_map[u] = st.session_state["color_map_user"].get(u, DEFAULT_COLORS[i % len(DEFAULT_COLORS)])
@@ -819,6 +1124,7 @@ with scatter_placeholder:
     elif style_mode == "By Complexity":
         color_arg = "Complexity"
         symbol_arg = "Complexity"
+        group_order_col = "Complexity"
         comps_present = sorted(plotting_df["Complexity"].dropna().unique())
         for i, cplx in enumerate(comps_present):
             color_map[cplx] = st.session_state["color_map_complex"].get(cplx, DEFAULT_COLORS[i % len(DEFAULT_COLORS)])
@@ -826,6 +1132,7 @@ with scatter_placeholder:
     elif style_mode == "By Family":
         color_arg = "FamilyForColor"
         symbol_arg = "FamilyForColor"
+        group_order_col = "FamilyForColor"
         fam_series_plot = plotting_df["FamilyKey"].replace("", np.nan).dropna()
         fam_counts_plot = fam_series_plot.value_counts()
         families_all_plot = fam_counts_plot.index.tolist()
@@ -849,30 +1156,41 @@ with scatter_placeholder:
     try:
         custom_cols = ["_hover_title", "_xval", "_yval", "_user", "_alloy_raw", "_family"]
 
+        if selected_group_line_style and group_order_col and group_order_col in plotting_df.columns:
+            plotting_df = plotting_df.sort_values(by=[group_order_col, x_col], kind="stable")
+
         # Ensure text column exists for safe use when plot_alloy_names True
         if "_hover_title" not in plotting_df.columns:
             plotting_df["_hover_title"] = plotting_df.get("Alloy", "").astype(str)
 
+        scatter_kwargs = dict(
+            data_frame=plotting_df,
+            x=x_col,
+            y=y_col,
+            symbol=symbol_arg,
+            custom_data=custom_cols,
+            labels={x_col: x_col, y_col: y_col},
+        )
+        if heatmap_enabled:
+            heatmap_scale_values = list(selected_heatmap_scale)
+            if reverse_heatmap_scale:
+                heatmap_scale_values = list(reversed(heatmap_scale_values))
+            scatter_kwargs["color"] = heatmap_z_col
+            scatter_kwargs["color_continuous_scale"] = heatmap_scale_values
+            if heatmap_zmin_final is not None and heatmap_zmax_final is not None:
+                scatter_kwargs["range_color"] = [heatmap_zmin_final, heatmap_zmax_final]
+            scatter_kwargs["labels"][heatmap_z_col] = heatmap_z_col
+        else:
+            scatter_kwargs["color"] = color_arg
+
         if plot_alloy_names:
             fig = px.scatter(
-                plotting_df,
-                x=x_col,
-                y=y_col,
-                color=color_arg,
-                symbol=symbol_arg,
-                custom_data=custom_cols,
                 text="_hover_title",
-                labels={x_col: x_col, y_col: y_col},
+                **scatter_kwargs,
             )
         else:
             fig = px.scatter(
-                plotting_df,
-                x=x_col,
-                y=y_col,
-                color=color_arg,
-                symbol=symbol_arg,
-                custom_data=custom_cols,
-                labels={x_col: x_col, y_col: y_col},
+                **scatter_kwargs,
             )
 
         hovertemplate = (
@@ -889,12 +1207,13 @@ with scatter_placeholder:
             try:
                 trace.marker.size = marker_size
                 trace.marker.opacity = marker_opacity
+                trace.marker.line = dict(color=marker_border_color, width=marker_border_width)
             except Exception:
                 pass
 
             # color & symbol mapping
             name = getattr(trace, "name", None)
-            if name is not None:
+            if (not heatmap_enabled) and name is not None:
                 if name in color_map:
                     try:
                         trace.marker.color = color_map[name]
@@ -906,6 +1225,23 @@ with scatter_placeholder:
                     except Exception:
                         pass
 
+            if selected_group_line_style:
+                try:
+                    trace.mode = "lines+markers"
+                    trace.line.dash = selected_group_line_style
+                    trace.line.width = line_width
+                    if (not heatmap_enabled) and name in color_map:
+                        trace.line.color = color_with_alpha(color_map[name], line_opacity)
+                    else:
+                        trace.line.color = color_with_alpha(marker_border_color, line_opacity)
+                except Exception:
+                    pass
+            else:
+                try:
+                    trace.mode = "markers+text" if plot_alloy_names else "markers"
+                except Exception:
+                    pass
+
             # hovertemplate
             try:
                 trace.hovertemplate = hovertemplate
@@ -916,9 +1252,9 @@ with scatter_placeholder:
             if plot_alloy_names:
                 try:
                     if hasattr(trace, "textfont"):
-                        trace.textfont = dict(size=int(alloy_name_size), color="#ffffff")
+                        trace.textfont = dict(size=int(alloy_name_size), color=axis_color)
                     else:
-                        trace.update(textfont=dict(size=int(alloy_name_size), color="#ffffff"))
+                        trace.update(textfont=dict(size=int(alloy_name_size), color=axis_color))
                     trace.textposition = "top center"
                 except Exception:
                     pass
@@ -930,14 +1266,67 @@ with scatter_placeholder:
                 font=dict(color="#ffffff", size=12, family="Arial")
             )
         )
+        if heatmap_enabled:
+            fig.update_layout(
+                coloraxis_colorbar=dict(
+                    title=dict(text=heatmap_heading_final, font=dict(color=axis_color)),
+                    tickfont=dict(color=axis_color),
+                    outlinewidth=0,
+                    bgcolor="rgba(0,0,0,0)",
+                    thickness=heatmap_bar_width,
+                    len=heatmap_bar_length,
+                )
+            )
+            if heatmap_bar_position == "Left":
+                fig.update_layout(
+                    coloraxis_colorbar=dict(
+                        x=-0.12,
+                        xanchor="right",
+                        y=0.5,
+                        yanchor="middle",
+                    )
+                )
+            elif heatmap_bar_position == "Above":
+                fig.update_layout(
+                    coloraxis_colorbar=dict(
+                        orientation="h",
+                        x=0.5,
+                        xanchor="center",
+                        y=1.12,
+                        yanchor="bottom",
+                    )
+                )
+            elif heatmap_bar_position == "Below":
+                fig.update_layout(
+                    coloraxis_colorbar=dict(
+                        orientation="h",
+                        x=0.5,
+                        xanchor="center",
+                        y=-0.28,
+                        yanchor="top",
+                    )
+                )
+            else:
+                fig.update_layout(
+                    coloraxis_colorbar=dict(
+                        x=1.02,
+                        xanchor="left",
+                        y=0.5,
+                        yanchor="middle",
+                    )
+                )
+            if not show_heatmap_bar:
+                fig.update_layout(coloraxis_showscale=False)
+            else:
+                fig.update_layout(coloraxis_showscale=True)
 
     except Exception as e:
         st.error(f"Error building scatter: {e}")
         fig = go.Figure()
 
     # Apply axis ranges and axis title/tick styling
-    fig.update_xaxes(range=[xmin, xmax], showgrid=False, showline=True, linecolor="#ffffff", tickfont=dict(size=14, color="#ffffff"), title_font=dict(size=16, color="#ffffff"))
-    fig.update_yaxes(range=[ymin, ymax], showgrid=False, showline=True, linecolor="#ffffff", tickfont=dict(size=14, color="#ffffff"), title_font=dict(size=16, color="#ffffff"))
+    fig.update_xaxes(range=[xmin, xmax], title_text=x_axis_title_final, showgrid=False, showline=True, linecolor=axis_color, tickfont=dict(size=14, color=axis_color), title_font=dict(size=16, color=axis_color))
+    fig.update_yaxes(range=[ymin, ymax], title_text=y_axis_title_final, showgrid=False, showline=True, linecolor=axis_color, tickfont=dict(size=14, color=axis_color), title_font=dict(size=16, color=axis_color))
 
     # compute height from mode
     fig_height = get_plot_height_for_mode(style_mode)
@@ -952,17 +1341,26 @@ with scatter_placeholder:
             xanchor="right",
             yanchor="top",
             bgcolor="rgba(0,0,0,0)",
-            borderwidth=0
+            borderwidth=0,
+            font=dict(color=axis_color)
         ),
+        legend_title_font=dict(color=axis_color),
+        showlegend=show_legend,
         margin=dict(l=40, r=20, t=30, b=40)
     )
 
     # Render
-    st.plotly_chart(fig, use_container_width=True)
-
-
-
-
+    scatter_plot_config = {
+        "displaylogo": False,
+        "toImageButtonOptions": {
+            "format": download_format,
+            "filename": "interactive_scatter",
+            "width": int(download_width),
+            "height": int(download_height),
+            "scale": float(download_scale),
+        },
+    }
+    st.plotly_chart(fig, use_container_width=True, config=scatter_plot_config)
 
 
 
@@ -993,9 +1391,10 @@ import pandas as pd
 import plotly.graph_objects as go
 import os
 import re
-from scipy.interpolate import interp1d
 import hashlib
 import colorsys
+from scipy.interpolate import interp1d
+from scipy.ndimage import gaussian_filter1d
 
 st.set_page_config(layout="wide")
 st.markdown("### 📊 Pro Interactive DOS")
@@ -1004,6 +1403,7 @@ st.markdown("### 📊 Pro Interactive DOS")
 # Helpers & parsing
 # ---------------------------
 _sub_digits = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
+
 def to_subscript(num):
     try:
         i = int(round(num))
@@ -1012,6 +1412,7 @@ def to_subscript(num):
     return str(i).translate(_sub_digits)
 
 _formula_re = re.compile(r"([A-Z][a-z]?)(\d*)")
+
 def parse_alloy_formula(formula):
     parts = _formula_re.findall(str(formula))
     d = {}
@@ -1039,7 +1440,7 @@ def alloy_unicode_title(alloy_raw):
     return str(alloy_raw)
 
 def safe_key(s: str) -> str:
-    return re.sub(r'[^0-9a-zA-Z_]', '_', str(s))
+    return re.sub(r"[^0-9a-zA-Z_]", "_", str(s))
 
 # Deterministic vibrant color generator (spread across hues, visible on dark bg)
 def vibrant_color_from_key(key: str):
@@ -1049,8 +1450,8 @@ def vibrant_color_from_key(key: str):
     hue = (hue + ((h >> 8) * golden) % 1.0) % 1.0
     sat = 0.5 + ((h >> 16) % 40) / 100.0   # 0.5 - 0.9
     val = 0.7 + ((h >> 24) % 30) / 100.0   # 0.7 - 1.0
-    r, g, b = colorsys.hsv_to_rgb(hue, min(sat,0.95), min(val,0.98))
-    return '#{0:02x}{1:02x}{2:02x}'.format(int(r*255), int(g*255), int(b*255))
+    r, g, b = colorsys.hsv_to_rgb(hue, min(sat, 0.95), min(val, 0.98))
+    return "#{0:02x}{1:02x}{2:02x}".format(int(r * 255), int(g * 255), int(b * 255))
 
 def two_distinct_colors(key_base: str):
     c1 = vibrant_color_from_key(key_base + "_A")
@@ -1058,6 +1459,22 @@ def two_distinct_colors(key_base: str):
     if c1 == c2:
         c2 = vibrant_color_from_key(key_base + "_C")
     return c1, c2
+
+# Gaussian smearing helper
+def smooth_dos(energy, dos, sigma_ev):
+    if sigma_ev is None or sigma_ev <= 0:
+        return dos
+    energy = np.asarray(energy)
+    dos = np.asarray(dos)
+    if len(energy) < 2:
+        return dos
+
+    dE = np.mean(np.diff(energy))
+    if not np.isfinite(dE) or dE == 0:
+        return dos
+
+    sigma_pts = max(1, int(round(float(sigma_ev) / abs(dE))))
+    return gaussian_filter1d(dos, sigma_pts)
 
 # ---------------------------
 # File loaders
@@ -1124,16 +1541,18 @@ df_master = filtered_df.copy()
 if "FamilyKey" not in df_master.columns:
     try:
         elements_cols = [c for c in df_master.columns if c.endswith("_present")]
+
         def make_family_key_from_row(row):
             present = []
             for c in elements_cols:
                 try:
                     vv = int(float(row[c]))
                 except Exception:
-                    vv = 1 if pd.notna(row[c]) and str(row[c]).strip() not in ["0","0.0","False","false",""] else 0
+                    vv = 1 if pd.notna(row[c]) and str(row[c]).strip() not in ["0", "0.0", "False", "false", ""] else 0
                 if vv:
                     present.append(c.replace("_present", ""))
             return "-".join(sorted(present)) if present else ""
+
         df_master["FamilyKey"] = df_master.apply(make_family_key_from_row, axis=1)
     except Exception:
         df_master["FamilyKey"] = df_master.get("Alloy", "").astype(str)
@@ -1159,14 +1578,29 @@ col_plot, col_controls = st.columns([1.2, 1])
 with col_controls:
     st.markdown('<div class="controls-section">', unsafe_allow_html=True)
 
-    style_mode = st.radio("Styling mode", ["Individual", "Family"], index=0, key="dos_styling_mode")
+    # Split the row into two columns:
+    # left = styling mode, right = gaussian smearing
+    mode_col, smear_col = st.columns([1, 1], gap="small")
+    with mode_col:
+        style_mode = st.radio("Styling mode", ["Individual", "Family"], index=0, key="dos_styling_mode")
+    with smear_col:
+        sigma_ev = st.number_input(
+            "Gaussian smearing (eV)",
+            min_value=0.0,
+            max_value=1.0,
+            value=0.06,
+            step=0.01,
+            format="%.2f",
+            key="dos_sigma_ev",
+        )
 
     # Row: users + alloys/families
     st.write("")
-    r1c1, r1c2 = st.columns([1,1])
+    r1c1, r1c2 = st.columns([1, 1])
     with r1c1:
         users = sorted(df_master["User"].dropna().unique().tolist())
         selected_users = st.multiselect("Choose users", options=users, default=users, key="dos_users")
+
     # prepare alloy display mapping
     unique_rows = df_master[["Alloy", "Total_atoms"]].drop_duplicates()
     alloy_display_map = {}
@@ -1188,7 +1622,12 @@ with col_controls:
 
     with r1c2:
         if style_mode == "Individual":
-            selected_alloy_displays = st.multiselect("Choose alloys", options=display_alloys_sorted, default=[], key="dos_alloys_multi")
+            selected_alloy_displays = st.multiselect(
+                "Choose alloys",
+                options=display_alloys_sorted,
+                default=[],
+                key="dos_alloys_multi",
+            )
         else:
             df_fam_src = df_master.copy()
             if selected_users:
@@ -1196,12 +1635,17 @@ with col_controls:
             fam_series = df_fam_src["FamilyKey"].replace("", np.nan).dropna()
             fam_counts = fam_series.value_counts()
             families_all = fam_counts.index.tolist()
-            selected_family = st.multiselect("Choose families", options=families_all, default=[], key="dos_families_multi")
+            selected_family = st.multiselect(
+                "Choose families",
+                options=families_all,
+                default=[],
+                key="dos_families_multi",
+            )
 
     # Compact row: left = TDOS/PDOS checkboxes, right = global line width (50% each)
-    row_td_pd, row_linew = st.columns([1,1], gap="small")
+    row_td_pd, row_linew = st.columns([1, 1], gap="small")
     with row_td_pd:
-        c1, c2 = st.columns([1,1], gap="small")
+        c1, c2 = st.columns([1, 1], gap="small")
         with c1:
             show_tdos = st.checkbox("TDOS", value=True, key="dos_show_tdos")
         with c2:
@@ -1249,7 +1693,12 @@ with col_controls:
     if style_mode == "Individual":
         tiles_full_list = [alloy_display_map[d] for d in (selected_alloy_displays or [])]
     else:
-        family_color_mode = st.radio("Coloring mode", ["Family coloring", "Individual coloring"], index=0, key="dos_family_color_mode")
+        family_color_mode = st.radio(
+            "Coloring mode",
+            ["Family coloring", "Individual coloring"],
+            index=0,
+            key="dos_family_color_mode",
+        )
         selected_families = (selected_family or [])
         if family_color_mode == "Family coloring":
             tiles_full_list = selected_families
@@ -1276,7 +1725,7 @@ with col_controls:
     page = st.session_state["dos_card_page"]
     start = page * PAGE_SIZE
     end = min(start + PAGE_SIZE, total_tiles)
-    pcol1, pcol2, pcol3 = st.columns([3,6,3])
+    pcol1, pcol2, pcol3 = st.columns([3, 6, 3])
     with pcol1:
         if st.button("Prev Page ", key="dos_prev"):
             st.session_state["dos_card_page"] = max(0, st.session_state["dos_card_page"] - 1)
@@ -1292,19 +1741,29 @@ with col_controls:
         cols = st.columns(len(visible_tiles), gap="small")
         for col_widget, key_item in zip(cols, visible_tiles):
             with col_widget:
-                title = alloy_unicode_title(key_item) if (style_mode == "Individual" or (style_mode == "Family" and family_color_mode == "Individual coloring")) else str(key_item)
-                st.markdown(f"<div class='family-card'><div class='family-card-title'>{title}</div></div>", unsafe_allow_html=True)
+                title = alloy_unicode_title(key_item) if (
+                    style_mode == "Individual"
+                    or (style_mode == "Family" and family_color_mode == "Individual coloring")
+                ) else str(key_item)
+                st.markdown(
+                    f"<div class='family-card'><div class='family-card-title'>{title}</div></div>",
+                    unsafe_allow_html=True,
+                )
 
                 # ensure entry exists
                 if key_item not in st.session_state["dos_card_map"]:
                     tcol, pcol = two_distinct_colors(str(key_item))
-                    st.session_state["dos_card_map"][key_item] = {"tdos_color": tcol, "pdos_color": pcol, "line_style": "solid"}
+                    st.session_state["dos_card_map"][key_item] = {
+                        "tdos_color": tcol,
+                        "pdos_color": pcol,
+                        "line_style": "solid",
+                    }
 
                 entry = st.session_state["dos_card_map"][key_item]
 
                 # Row 1: labels and color pickers
                 st.markdown("<div style='display:flex; gap:8px;'>", unsafe_allow_html=True)
-                cc1, cc2 = st.columns([1,1], gap="small")
+                cc1, cc2 = st.columns([1, 1], gap="small")
                 with cc1:
                     st.markdown("<div class='card-label'>TDOS color</div>", unsafe_allow_html=True)
                     c_t = st.color_picker("", value=entry["tdos_color"], key=f"tdos_color__{safe_key(key_item)}")
@@ -1316,27 +1775,28 @@ with col_controls:
                 st.markdown("</div>", unsafe_allow_html=True)
 
                 # Row 2: Line style dropdown (single control) — full width
-             
                 st.markdown("<div class='card-label'>Line style</div>", unsafe_allow_html=True)
 
-                # robust index calculation: match lowercased strings
                 style_options_display = ["Solid", "Dot", "Dash", "DashDot"]
                 style_map_lower_to_plot = {"solid": "solid", "dot": "dot", "dash": "dash", "dashdot": "dashdot"}
                 current_style = entry.get("line_style", "solid") or "solid"
-                # find index by comparing lowercased display -> lower of mapped plot style
                 index_choice = 0
                 for i, disp in enumerate(style_options_display):
                     if style_map_lower_to_plot.get(disp.lower()) == current_style.lower():
                         index_choice = i
                         break
-                selected_disp = st.selectbox("", style_options_display, index=index_choice, key=f"line_style__{safe_key(key_item)}")
-                # map back to stored lower-case plotly dash string
+                selected_disp = st.selectbox(
+                    "",
+                    style_options_display,
+                    index=index_choice,
+                    key=f"line_style__{safe_key(key_item)}",
+                )
                 entry["line_style"] = style_map_lower_to_plot[selected_disp.lower()]
                 st.session_state["dos_card_map"][key_item] = entry
     else:
         st.info("No styling items to show. Select users and alloys/families.")
 
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # ---------------------------
 # Plot (left column)
@@ -1348,7 +1808,7 @@ with col_plot:
     if style_mode == "Individual":
         n_selected = len(selected_alloy_displays or [])
     else:
-        n_selected = len(selected_family or []) if 'selected_family' in locals() else 0
+        n_selected = len(selected_family or []) if "selected_family" in locals() else 0
     fig_height = get_plot_height_for_mode(style_mode, n_selected)
 
     plot_bg = "#262e40"
@@ -1356,14 +1816,36 @@ with col_plot:
         plot_bgcolor=plot_bg,
         paper_bgcolor=plot_bg,
         height=fig_height,
-        legend=dict(x=0.02, y=0.98, xanchor="left", yanchor="top", bgcolor="rgba(0,0,0,0)", borderwidth=0, font=dict(color="#ffffff")),
+        legend=dict(
+            x=0.02,
+            y=0.98,
+            xanchor="left",
+            yanchor="top",
+            bgcolor="rgba(0,0,0,0)",
+            borderwidth=0,
+            font=dict(color="#ffffff"),
+        ),
         margin=dict(l=40, r=20, t=30, b=40),
     )
 
-    fig.update_xaxes(title_text="Energy (eV)", range=[xmin, xmax], showgrid=False, showline=True, linecolor="#ffffff",
-                     tickfont=dict(size=12, color="#ffffff"), title_font=dict(size=14, color="#ffffff"))
-    fig.update_yaxes(title_text="DOS per Atom", range=[ymin, ymax], showgrid=False, showline=True, linecolor="#ffffff",
-                     tickfont=dict(size=12, color="#ffffff"), title_font=dict(size=14, color="#ffffff"))
+    fig.update_xaxes(
+        title_text="Energy (eV)",
+        range=[xmin, xmax],
+        showgrid=False,
+        showline=True,
+        linecolor="#ffffff",
+        tickfont=dict(size=12, color="#ffffff"),
+        title_font=dict(size=14, color="#ffffff"),
+    )
+    fig.update_yaxes(
+        title_text="DOS per Atom",
+        range=[ymin, ymax],
+        showgrid=False,
+        showline=True,
+        linecolor="#ffffff",
+        tickfont=dict(size=12, color="#ffffff"),
+        title_font=dict(size=14, color="#ffffff"),
+    )
 
     # prepare df filtered by users
     df_plot_src = df_master.copy()
@@ -1414,6 +1896,7 @@ with col_plot:
             try:
                 E, D = load_tdos(tdos_path)
                 D = D / float(atoms)
+                D = smooth_dos(E, D, sigma_ev)
                 interp = interp1d(E, D, fill_value="extrapolate")
                 nef = float(interp(0))
                 name_label = f"{alloy_unicode_title(alloy)} (N(Ef)={nef:.2f})"
@@ -1421,7 +1904,7 @@ with col_plot:
                 fig.add_trace(go.Scatter(
                     x=E, y=D, mode="lines", name=name_label,
                     line=dict(color=tdos_color, width=width, dash=style_dash),
-                    text=[name_label]*len(E), meta=[nef]*len(E), hovertemplate=hovertemplate
+                    text=[name_label] * len(E), meta=[nef] * len(E), hovertemplate=hovertemplate
                 ))
             except Exception as e:
                 st.warning(f"Failed to load TDOS for {alloy}: {e}")
@@ -1430,18 +1913,25 @@ with col_plot:
         if show_pdos and uid is not None and os.path.exists(pdos_path):
             try:
                 df_pdos = load_pdos(pdos_path)
-                energy = df_pdos.iloc[:,0]
+                energy = df_pdos.iloc[:, 0]
                 cols = df_pdos.columns[1:]
                 s_cols = [c for c in cols if "_s" in c]
                 p_cols = [c for c in cols if "_p" in c]
-                t2g_cols = [c for c in cols if any(x in c for x in ["dxy","dyz","dxz"])]
-                eg_cols = [c for c in cols if any(x in c for x in ["dz2","dx2"])]
+                t2g_cols = [c for c in cols if any(x in c for x in ["dxy", "dyz", "dxz"])]
+                eg_cols = [c for c in cols if any(x in c for x in ["dz2", "dx2"])]
                 total = np.zeros(len(energy))
-                if orb_s: total += df_pdos[s_cols].sum(axis=1) if s_cols else 0
-                if orb_p: total += df_pdos[p_cols].sum(axis=1) if p_cols else 0
-                if orb_t2g: total += df_pdos[t2g_cols].sum(axis=1) if t2g_cols else 0
-                if orb_eg: total += df_pdos[eg_cols].sum(axis=1) if eg_cols else 0
+                if orb_s:
+                    total += df_pdos[s_cols].sum(axis=1) if s_cols else 0
+                if orb_p:
+                    total += df_pdos[p_cols].sum(axis=1) if p_cols else 0
+                if orb_t2g:
+                    total += df_pdos[t2g_cols].sum(axis=1) if t2g_cols else 0
+                if orb_eg:
+                    total += df_pdos[eg_cols].sum(axis=1) if eg_cols else 0
+
                 total = total / float(atoms)
+                total = smooth_dos(energy, total, sigma_ev)
+
                 try:
                     nef_p = float(interp1d(energy, total, fill_value="extrapolate")(0))
                 except Exception:
@@ -1451,7 +1941,7 @@ with col_plot:
                 fig.add_trace(go.Scatter(
                     x=energy, y=total, mode="lines", name=name_label,
                     line=dict(color=pdos_color, width=width, dash=style_dash),
-                    text=[name_label]*len(energy), meta=[nef_p]*len(energy), hovertemplate=hovertemplate
+                    text=[name_label] * len(energy), meta=[nef_p] * len(energy), hovertemplate=hovertemplate
                 ))
             except Exception as e:
                 st.warning(f"Failed to load PDOS for {alloy}: {e}")
@@ -1462,10 +1952,6 @@ with col_plot:
 
     fig.update_layout(legend=dict(font=dict(color="#ffffff")))
     st.plotly_chart(fig, use_container_width=True)
-
-
-
-
 
 
 
@@ -1505,13 +1991,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 # =====================================================
 # OPTIONAL: BACK BUTTON
 # =====================================================
-st.markdown(
-    """
-    <div class="details-back-btn">
-        <a href="/" class="details-back-link">← Back to Dashboard</a>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+if st.button("← Back to Dashboard", key="details_back_button"):
+    st.switch_page("app.py")
 
 st.markdown('</div>', unsafe_allow_html=True)

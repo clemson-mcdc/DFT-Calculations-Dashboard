@@ -325,7 +325,7 @@ with col3:
     st.markdown(
         """
         <div class="chart-card">
-            <h3>📉 Modulus vs Ductility</h3>
+            <h3>📉 Modulus vs Ductility<sub>&nbsp;</sub></h3>
         </div>
         """,
         unsafe_allow_html=True
@@ -519,7 +519,7 @@ with col4:
     st.markdown(
         """
         <div class="chart-card">
-            <h3>🔬 Modulus vs Nef (DOS at Fermi Level)</h3>
+            <h3>🔬 Modulus vs N<sub>ef</sub></h3>
         </div>
         """,
         unsafe_allow_html=True
