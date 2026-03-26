@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 import streamlit.components.v1 as components
 import zipfile
 from io import BytesIO
+import re
 
 # =====================================================
 # PAGE CONFIG
@@ -1011,6 +1012,11 @@ for folder in expected_folders:
 # ============================================================
 # Function to create ZIP of filtered alloys
 # ============================================================
+def make_safe_zip_name(value):
+    safe = re.sub(r'[\\/:*?"<>|]+', "_", str(value).strip())
+    safe = re.sub(r"\s+", "_", safe)
+    return safe.strip("._") or "unknown"
+
 def create_filtered_alloys_zip(filtered_df):
     buffer = BytesIO()
 
@@ -1023,14 +1029,8 @@ def create_filtered_alloys_zip(filtered_df):
         for idx, row in filtered_df.iterrows():
 
             try:
-                # WARNING: This assumes the first column of filtered_df is unique_id
-                unique_id = row.iloc[0]
-
-                # Optional: replace with explicit column name once known
-                # unique_id = row['YourUniqueIDColumnName']
-
-                alloy_name = str(row.iloc[2]).replace(" ", "_")
-                atom_count = str(row.iloc[3])
+                unique_id = row["Unique_ID"]
+                alloy_name = make_safe_zip_name(row["Alloy"])
             except Exception as e:
                 continue
 
@@ -1049,12 +1049,13 @@ def create_filtered_alloys_zip(filtered_df):
                 if not os.path.exists(src_path):
                     continue
 
-                new_name = f"{folder.split('.')[0]}_{alloy_name}_{atom_count}"
+                base_folder = folder.split('.')[0]
+                new_name = f"{base_folder}_{alloy_name}"
                 if filename.endswith(".dat"):
                     new_name += ".dat"
 
                 try:
-                    zipf.write(src_path, arcname=new_name)
+                    zipf.write(src_path, arcname=f"{base_folder}/{new_name}")
                 except Exception as e:
                     pass
 
@@ -1268,9 +1269,7 @@ else:
         unique_id = unique_ids.iloc[row_index]
         
         # Get alloy info from display_df (skip "S. No." and "Download Files" columns)
-        alloy_name = str(display_df.iloc[row_index, 1]).replace(" ", "_")  # Column 1 is "Alloy"
-        atom_count = str(display_df.iloc[row_index, 2])  # Column 2 is "Atom Count"
-        
+        alloy_name = make_safe_zip_name(display_df.iloc[row_index, 1])  # Column 1 is "Alloy"
         if not unique_id or str(unique_id) == "nan":
             return buffer
         
@@ -1287,12 +1286,13 @@ else:
                 if not os.path.exists(src_path):
                     continue
                 
-                new_name = f"{folder.split('.')[0]}_{alloy_name}_{atom_count}"
+                base_folder = folder.split('.')[0]
+                new_name = f"{base_folder}_{alloy_name}"
                 if filename.endswith(".dat"):
                     new_name += ".dat"
                 
                 try:
-                    zipf.write(src_path, arcname=new_name)
+                    zipf.write(src_path, arcname=f"{base_folder}/{new_name}")
                 except Exception as e:
                     pass
         
