@@ -978,6 +978,7 @@ div.st-key-detailed_analysis {
   flex-direction: row;
   align-items: center;
   justify-content: flex-start; /* aligns title to the left, change if needed */
+  width: 100%;
 
   padding: 4px 8px;
   margin-top: 4px;
@@ -988,10 +989,11 @@ div.st-key-detailed_analysis {
 
 .filtered-alloys-title {
   font-family: "Arial", sans-serif;
-  font-size: 25px;
+  font-size: clamp(18px, 1.6vw, 25px);
   font-weight: 600;
   color: #ffffff;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px; /* space between title and count */
 }
@@ -1026,26 +1028,34 @@ div.st-key-detailed_analysis {
 .st-key-btn_details button,
 .st-key-btn_csv button,
 .st-key-btn_zip button {
-  height: 44px;
+  min-height: 44px;
+  height: auto;
   margin-top: 12px;
   margin-bottom: 12px;
+  width: 100%;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  font-size: 17px;
+  font-size: clamp(14px, 1vw, 17px);
   font-weight: 600;
   font-family: "Arial", sans-serif;
 
   border-radius: 10px;
   transition: all 0.2s ease-in-out;
-  white-space: nowrap;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.25;
+  padding: 10px 12px;
+  word-break: break-word;
+  box-sizing: border-box;
 }
 
 .st-key-btn_details {
   display: flex;
   justify-content: center;
+  width: 100%;
 }
 
 .st-key-btn_details button {
@@ -1062,6 +1072,7 @@ div.st-key-detailed_analysis {
 .st-key-btn_csv {
   display: flex;
   justify-content: center;
+  width: 100%;
 }
 
 .st-key-btn_csv button {
@@ -1078,6 +1089,7 @@ div.st-key-detailed_analysis {
 .st-key-btn_zip {
   display: flex;
   justify-content: center;
+  width: 100%;
 }
 
 .st-key-btn_zip button {
@@ -1089,6 +1101,51 @@ div.st-key-detailed_analysis {
 .st-key-btn_zip button:hover {
   background-color: #365fc2;
   transform: translateY(-2px);
+}
+
+div[data-testid="stHorizontalBlock"]:has(.st-key-btn_details):has(.st-key-btn_csv):has(.st-key-btn_zip) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 12px;
+  width: 100%;
+}
+
+div[data-testid="stHorizontalBlock"]:has(.st-key-btn_details):has(.st-key-btn_csv):has(.st-key-btn_zip) > div[data-testid="column"] {
+  min-width: 0;
+}
+
+div[data-testid="stHorizontalBlock"]:has(.st-key-btn_details):has(.st-key-btn_csv):has(.st-key-btn_zip) > div[data-testid="column"]:first-child {
+  flex: 1 1 42%;
+}
+
+div[data-testid="stHorizontalBlock"]:has(.st-key-btn_details):has(.st-key-btn_csv):has(.st-key-btn_zip) > div[data-testid="column"]:not(:first-child) {
+  flex: 1 1 calc((58% - 24px) / 3);
+}
+
+@media (max-width: 1100px) {
+  div[data-testid="stHorizontalBlock"]:has(.st-key-btn_details):has(.st-key-btn_csv):has(.st-key-btn_zip) > div[data-testid="column"]:first-child {
+    flex: 1 1 100%;
+  }
+
+  div[data-testid="stHorizontalBlock"]:has(.st-key-btn_details):has(.st-key-btn_csv):has(.st-key-btn_zip) > div[data-testid="column"]:not(:first-child) {
+    flex: 1 1 calc((100% - 24px) / 3);
+  }
+}
+
+@media (max-width: 760px) {
+  div[data-testid="stHorizontalBlock"]:has(.st-key-btn_details):has(.st-key-btn_csv):has(.st-key-btn_zip) > div[data-testid="column"] {
+    flex: 1 1 100% !important;
+  }
+
+  .filtered-alloys-container {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .filtered-alloys-title {
+    gap: 8px;
+  }
 }
 
 /* =====================================================
@@ -1928,7 +1985,6 @@ div[data-testid="stTextInput"] input {
   overflow: hidden; /* contain floats without altering outer layout */
   padding-bottom: 6px;
 }
-
 
 
 
