@@ -1159,6 +1159,18 @@ div[data-testid="stDataFrame"] {
   border: 1px solid #2a2f3a;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.55);
   padding: 8px;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+div[data-testid="stDataFrame"] > div {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+}
+
+div[data-testid="stDataFrame"] [data-testid="stDataFrameResizable"] {
+  overflow-x: auto !important;
 }
 
 /* Table */
@@ -1168,6 +1180,7 @@ div[data-testid="stDataFrame"] table {
   font-family: "Arial", sans-serif;
   font-size: 15px;
   color: #e5e7eb;
+  min-width: max-content;
 }
 
 /* Header row */
@@ -1985,7 +1998,6 @@ div[data-testid="stTextInput"] input {
   overflow: hidden; /* contain floats without altering outer layout */
   padding-bottom: 6px;
 }
-
 
 
 

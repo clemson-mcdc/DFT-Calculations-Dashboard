@@ -1426,6 +1426,11 @@ else:
         tr:hover td {{
             background-color: rgba(66,115,206,0.25);
         }}
+
+        table {{
+            min-width: max-content;
+            width: max-content;
+        }}
         
         .download-button {{
             background: linear-gradient(145deg, #4273CE, #2a4a8a);
@@ -1442,15 +1447,41 @@ else:
         .download-button:hover {{
             background: linear-gradient(145deg, #2a4a8a, #4273CE);
         }}
+
+        * {{
+            scrollbar-color: rgba(66,115,206,0.6) #1f2430;
+            scrollbar-width: thin;
+        }}
+
+        div::-webkit-scrollbar {{
+            height: 10px;
+            width: 10px;
+        }}
+
+        div::-webkit-scrollbar-track {{
+            background: #1f2430;
+            border-radius: 10px;
+        }}
+
+        div::-webkit-scrollbar-thumb {{
+            background: rgba(66,115,206,0.6);
+            border-radius: 10px;
+            border: 2px solid #1f2430;
+        }}
+
+        div::-webkit-scrollbar-thumb:hover {{
+            background: rgba(66,115,206,0.85);
+        }}
     </style>
     
     <div style="
         max-height: 500px;
         overflow-y: auto;
-        overflow-x: hidden;
+        overflow-x: auto;
         width: 100%;
         border-radius: 10px;
         margin-top: 20px;
+        -webkit-overflow-scrolling: touch;
     ">
         {html_table}
     </div>
