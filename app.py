@@ -1234,7 +1234,8 @@ else:
         return x
 
     numeric_cols = display_df.select_dtypes(include=["number"]).columns
-    display_df[numeric_cols] = display_df[numeric_cols].applymap(format_number)
+    display_df[numeric_cols] = display_df[numeric_cols].apply(lambda col: col.map(format_number))
+
 
     # --------------------------------------------------
     # COLUMN WIDTHS (1-to-1 with columns above)
